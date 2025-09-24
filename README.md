@@ -1,4 +1,5 @@
 # FHIR NLP Query App
+A full-stack app that lets users search FHIR patient data using natural language, with a FastAPI backend and React/Next.js frontend.
 
 This repo contains:
 - **Backend (Python + FastAPI + spaCy)** → NLP query parsing → FHIR-style simulated data.
