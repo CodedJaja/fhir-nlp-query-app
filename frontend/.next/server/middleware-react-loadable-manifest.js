@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"index.js -> ../src/api\":{\"id\":\"index.js -> ../src/api\",\"files\":[\"static/chunks/src_api_js.js\"]}}"
