@@ -8,7 +8,7 @@ This repo contains:
 - *Backend (Python + FastAPI + spaCy)* → NLP query parsing → FHIR-style simulated data.
 - *Frontend (Next.js + Tailwind + Chart.js)* → User query input, autocomplete, table + chart display.
 # 🧠 FHIR NLP Query App  
- dff7f8a (Prepare for rebase: include backend and root changes)
+(Prepare for rebase: include backend and root changes)
 
 ## Running Locally
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/CodedJaja/fhir-nlp-query-app/ci.yml?branch=main)](https://github.com/CodedJaja/fhir-nlp-query-app/actions)

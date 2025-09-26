@@ -1,15 +1,13 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
+from pydantic import BaseModel
+from typing import List, Optional
+import random
 
 app = FastAPI()
 
-# Enable CORS
-origins = [
-    "http://localhost:3000",  # frontend dev URL
-    "http://127.0.0.1:3000",
-]
-
+# Enable CORS so frontend can talk to backend
+origins = ["http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -18,30 +16,63 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Example patient database
-patients = [
-    {"id": 1, "name": "John Doe", "age": 45, "condition": "diabetes"},
-    {"id": 2, "name": "Jane Smith", "age": 32, "condition": "hypertension"},
-    {"id": 3, "name": "Alice Johnson", "age": 28, "condition": "asthma"},
-    {"id": 4, "name": "Bob Brown", "age": 50, "condition": "diabetes"},
-]
+# Request models
+class QueryFilters(BaseModel):
+    minAge: Optional[int] = None
+    maxAge: Optional[int] = None
+    diagnosis: Optional[str] = None
 
-@app.get("/")
-def read_root():
-    return {"message": "FHIR NLP API running"}
+class QueryRequest(BaseModel):
+    query: str
+    filters: Optional[QueryFilters] = None
 
-@app.get("/query")
-def query_patients(q: str = Query(..., min_length=1)):
-    results = [p for p in patients if q.lower() in p["condition"].lower()]
-    if not results:
-        raise HTTPException(status_code=404, detail="No patients found")
-    return {"results": results}
+# Dummy patient generator
+CONDITIONS = ["Diabetes", "Hypertension", "Asthma", "Cardiovascular", "Cancer"]
+FIRST_NAMES = ["Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah", "Ian", "Jane"]
 
+def generate_patients(n=50):
+    patients = []
+    for _ in range(n):
+        patient = {
+            "name": random.choice(FIRST_NAMES),
+            "age": random.randint(20, 80),
+            "condition": random.choice(CONDITIONS),
+            "count": random.randint(1, 3)
+        }
+        patients.append(patient)
+    return patients
+
+# Create dataset at startup
+DATASET = generate_patients()
+
+# POST /query endpoint
+@app.post("/query")
+def query_data(req: QueryRequest):
+    filtered_patients = DATASET
+
+    # Apply filters
+    if req.filters:
+        if req.filters.minAge is not None:
+            filtered_patients = [p for p in filtered_patients if p["age"] >= req.filters.minAge]
+        if req.filters.maxAge is not None:
+            filtered_patients = [p for p in filtered_patients if p["age"] <= req.filters.maxAge]
+        if req.filters.diagnosis:
+            filtered_patients = [p for p in filtered_patients if req.filters.diagnosis.lower() in p["condition"].lower()]
+
+    # Generate chart data
+    chart_data = {}
+    for p in filtered_patients:
+        chart_data[p["condition"]] = chart_data.get(p["condition"], 0) + 1
+
+    chart_data_list = [{"name": k, "value": v} for k, v in chart_data.items()]
+
+    return {
+        "message": "Query successful",
+        "results": filtered_patients,
+        "chartData": chart_data_list
+    }
+
+# GET /query_suggestions?q=...
 @app.get("/query_suggestions")
-def query_suggestions(q: str = Query(..., min_length=1)):
-    """
-    Returns auto-complete suggestions for patient conditions matching the query.
-    """
-    # Collect unique condition suggestions that contain the query substring
-    suggestions = list({p["condition"] for p in patients if q.lower() in p["condition"].lower()})
-    return {"suggestions": suggestions}
+def query_suggestions(q: str):
+    return [cond for cond in CONDITIONS if q.lower() in cond.lower()]
